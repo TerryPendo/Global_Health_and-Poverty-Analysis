@@ -1,0 +1,444 @@
+---
+title: "2025 Data Science Task"
+author: "TERESIA MWAGONA"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyverse)    
+library(ggplot2)      
+library(sf)           
+library(lme4)
+library(plotly)
+library(dplyr)
+library(stringr)
+library(viridis)
+library(scales)
+# Load  the dataset 
+hiv_data <- read_csv("HIV data 2000-2023.csv",, show_col_types = FALSE)
+
+```
+
+**Cleaning the HIV 2000_2023 DATASET**
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE,error=FALSE}
+
+# Cleaning the data by extracting main estimate from value column
+hiv_data <- hiv_data %>%
+  mutate(
+    HIV_Population_raw = str_extract(Value, "^[^\\[]+"),              
+    HIV_Population_clean = str_replace_all(HIV_Population_raw, "\\s", ""),  # remove spaces
+    HIV_Population = as.numeric(HIV_Population_clean)                # convert to number
+  )
+#Check rows that failed to convert
+problematic_rows <- hiv_data %>%
+  filter(is.na(HIV_Population) & !is.na(Value))
+
+#Remove no data rows and < estimates
+hiv_data <- hiv_data %>%
+  filter(!str_detect(Value, "No data|<")) %>%  
+  mutate(
+    HIV_Population_raw = str_extract(Value, "^[^\\[]+"),
+    HIV_Population_clean = str_replace_all(HIV_Population_raw, "\\s", ""),
+    HIV_Population = as.numeric(HIV_Population_clean)
+  ) %>%
+  filter(!is.na(HIV_Population))  # Keep only valid rows
+
+#drop last 2 columns
+hiv_data <- hiv_data %>%
+  select(-HIV_Population_raw, -HIV_Population_clean)
+
+#rename hiv_clean data as Value
+hiv_data <- hiv_data %>%
+  select(-Value) %>%  # remove old Value column
+  rename(Value = HIV_Population)  # rename cleaned column to Value
+
+```
+
+**Trends of HIV cases in countries that contribute to 75% of the global burden**
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE}
+
+hiv_data %>%
+  group_by(Period) %>%
+  summarise(total = sum(Value, na.rm = TRUE)) %>%
+  arrange(desc(Period))
+
+# Sum the total HIV cases for each country across all period
+total_hiv_by_country <- hiv_data %>%
+  filter(!is.na(Value)) %>%  
+  group_by(Location) %>%
+  summarise(total_hiv = sum(Value, na.rm = TRUE)) %>%
+  arrange(desc(total_hiv))
+
+# Calculate cumulative sum and cumulative percentage of global HIV burden
+total_hiv_sum <- sum(total_hiv_by_country$total_hiv)  
+
+total_hiv_by_country <- total_hiv_by_country %>%
+  mutate(
+    cum_sum = cumsum(total_hiv),  # Cumulative sum of HIV cases
+    cum_percent = cum_sum / total_hiv_sum 
+  )
+
+# Identify countries that contribute to 75% of the global HIV burden
+top75_countries <- total_hiv_by_country %>%
+  filter(cum_percent <= 0.75)%>%
+  pull(Location)
+
+# Print the countries contributing to 75% of the HIV burden
+top75_countries
+
+```
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE,fig.width=14, fig.height=8}
+# filter data for the countries contributing to 75% of the HIV burden
+hiv_trend_data <- hiv_data %>%
+  filter(Location %in% top75_countries, !is.na(Value))
+
+#plot the trends
+ggplot(hiv_trend_data, aes(x = Period , y = Value, color = Location)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Location, scales = "free_y") +   
+  labs(
+    title = "HIV Cases Trend by Country (75% Global HIV Burden)",
+    x = "Period",
+    y = "Number of People Living with HIV"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+**Trends of HIV Cases in Countries contributing 75% of the burden within each WHO region**
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE,fig.width=14, fig.height=12}
+# Filter out missing values
+hiv_clean <- hiv_data %>%
+  filter(!is.na(Value))
+
+#Identify top 75% burden countries WITHIN EACH REGION
+top75_by_region <- hiv_clean %>%
+  group_by(ParentLocationCode, Location) %>%
+  summarise(total_hiv = sum(Value, na.rm = TRUE), .groups = "drop") %>%
+  group_by(ParentLocationCode) %>%
+  arrange(desc(total_hiv), .by_group = TRUE) %>%
+  mutate(
+    cum_sum = cumsum(total_hiv),
+    region_total = sum(total_hiv),
+    cum_percent = cum_sum / region_total
+  ) %>%
+  filter(cum_percent <= 0.75) %>%
+  select(ParentLocationCode, Location)
+
+#Join with original data to get time trend info for these countries
+hiv_top75 <- hiv_clean %>%
+  inner_join(top75_by_region, by = c("ParentLocationCode", "Location"))
+
+#Plot trends for each region
+ggplot(hiv_top75, aes(x = Period, y = Value, color = Location)) +
+  geom_line(linewidth = 1) +
+  facet_wrap(~ParentLocationCode, scales = "free_y") +
+  scale_y_continuous(labels = comma) +
+  labs(
+    title = "HIV Trends (2000–2023) in Top 75% Burden Countries Within Each WHO Region",
+    x = "Year",
+    y = "Estimated People Living with HIV",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")+
+  theme(legend.text = element_text(size = 14))
+
+```
+
+**Analyzing the relationship between people living with HIV and multidimensional poverty and the individual factors that contribute to the ratio**
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE}
+#Load the dataset
+poverty_data <- readxl::read_excel("multidimensional_poverty.xlsx")  
+
+# Extract the first row as the initial column names for columns 1 to 10 
+initial_column_names <- poverty_data[1, 1:10]
+# Extract the second row for columns 11 to 15
+second_row_column_names <- poverty_data[2, 11:15]
+# Extract the name of column 16 from the first row
+column_16_name <- poverty_data[1, 16]
+# Combine all parts of the column names
+new_column_names <- c(as.character(initial_column_names), as.character(second_row_column_names), as.character(column_16_name))
+# Assign the new column names to the data
+names(poverty_data) <- new_column_names
+names(poverty_data)
+
+# Skip the first two rows
+poverty_data <- poverty_data[-c(1, 2), ]
+
+# Rename poverty columns
+poverty_data <- poverty_data %>%
+  rename(
+    Location = Economy,
+    Period = `Reporting year`
+  )
+# convert period in both data sets to numeric
+hiv_data$Period <- as.numeric(hiv_data$Period)
+poverty_data$Period <- as.numeric(poverty_data$Period)
+```
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE}
+# Merge datasets
+merged_data <- hiv_data %>%
+  select(Location, Period, Value,ParentLocationCode) %>%
+  inner_join(poverty_data, by = c("Location", "Period"))
+#renaming columns
+merged_data <- merged_data %>%
+  rename(
+    Income = `Deprivation rate (share of population)`,
+    Year = Period,
+    Country = Location
+  )
+names(merged_data)
+# Replace "-" with NA in the entire dataset
+merged_data[merged_data == "-"] <- NA
+
+# Convert the  variables to numeric 
+merged_data$`Multidimensional poverty headcount ratio (%)` <- as.numeric(merged_data$`Multidimensional poverty headcount ratio (%)`)
+merged_data$Income <- as.numeric(as.character(merged_data$Income))  
+merged_data$`Educational attainment (%)` <- as.numeric(as.character(merged_data$`Educational attainment (%)`))  
+merged_data$`Educational enrollment (%)` <- as.numeric(as.character(merged_data$`Educational enrollment (%)`))  
+merged_data$`Electricity (%)` <- as.numeric(as.character(merged_data$`Electricity (%)`))  
+merged_data$`Sanitation (%)` <- as.numeric(as.character(merged_data$`Sanitation (%)`))  
+merged_data$`Drinking water (%)` <- as.numeric(as.character(merged_data$`Drinking water (%)`))  
+
+# Standardize the predictors  
+merged_data$Value <- scale(merged_data$Value)  
+merged_data$Income <- scale(merged_data$Income)  
+merged_data$`Educational attainment (%)` <- scale(merged_data$`Educational attainment (%)`)  
+merged_data$`Educational enrollment (%)` <- scale(merged_data$`Educational enrollment (%)`)  
+merged_data$`Electricity (%)` <- scale(merged_data$`Electricity (%)`)  
+merged_data$`Sanitation (%)` <- scale(merged_data$`Sanitation (%)`)  
+merged_data$`Drinking water (%)` <- scale(merged_data$`Drinking water (%)`)  
+```
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE}
+
+# Fit a mixed model
+ mixed_model <- lmer(`Multidimensional poverty headcount ratio (%)` ~   
+                       Value +   
+                       Income +   
+                        `Educational attainment (%)` +   
+                       `Educational enrollment (%)` +   
+                       `Electricity (%)` +   
+                        `Sanitation (%)` +   
+                       `Drinking water (%)` +   
+                       (1 | Year),   
+                     data = merged_data)  
+ 
+# View the model summary  
+ summary(mixed_model)
+```
+
+The analysis shows that higher HIV prevalence is linked to lower multidimensional poverty (β = -1.91), meaning countries with more people living with HIV tend to have less poverty.However, low income levels strongly increase poverty (β = 12.83), confirming that poorer countries face worse living conditions. Both school enrollment (β = 3.27, p \< 0.001) and electricity access (β = 5.04, p \< 0.001) significantly reduce poverty,showing that education and infrastructure matter.In contrast, educational attainment (%), sanitation access, and drinking water access did not show statistically significant effects (all p \> 0.05).The Random effect Year (SD = 6.80) suggests that poverty changes over time.It indicates unexplained yearly variations in poverty.
+
+**Filter the data for the 8 countries belonging in EAC**
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE,error=FALSE}
+mortality_dataset <- read_csv("dataset_datascience.csv",show_col_types = FALSE)  
+
+u5_mortality_rate <- mortality_dataset %>% filter(Indicator=="Under-five mortality rate")
+neonatal_rate <- mortality_dataset %>%  filter(Indicator=="Neonatal mortality rate")
+
+#Define EAC countries
+eac_countries <- c("Burundi", "Democratic Republic of the Congo", "Kenya", 
+                   "Rwanda", "Somalia", "South Sudan", "Uganda", "United Republic of Tanzania")
+
+#Filter the data for the 8 countries
+under_five_eac <- u5_mortality_rate %>% filter(`Geographic area` %in% eac_countries)
+neonatal_eac <- neonatal_rate %>% filter(`Geographic area` %in% eac_countries)
+
+```
+
+**Map for latest estimate of Under 5 Mortality rates**
+
+```{r,echo= TRUE, message=FALSE, warning=FALSE,fig.width=10, fig.height=6}
+#extracting the latest year 
+under_five_eac <- under_five_eac %>%
+  mutate(
+    Year = ifelse(
+      str_detect(`Series Year`, "-"),  
+      str_sub(`Series Year`, -4, -1),  
+      `Series Year`                    
+    ),
+    Year = as.numeric(Year)           
+  )
+
+neonatal_eac <- neonatal_eac %>%
+  mutate(
+    Year = ifelse(
+      str_detect(`Series Year`, "-"),  
+      str_sub(`Series Year`, -4, -1),  
+      `Series Year`                    
+    ),
+    Year = as.numeric(Year)           
+  )
+# Pick the latest year
+mortality_latest <- under_five_eac %>%
+  filter(`Geographic area` %in% c("Kenya", "Rwanda", "Uganda", "United Republic of Tanzania", "South Sudan", "Burundi", "Democratic Republic of the Congo", "Somalia")) %>%
+  group_by(`Geographic area`) %>%
+  slice_max(order_by = Year, n = 1) %>%
+  ungroup()
+
+# 1. Filter to Sex == "Total" and Wealth Quintile == "Total"
+mortality_latest <- mortality_latest %>%
+  filter(Sex == "Total", `Wealth Quintile` == "Total")
+
+#Get the median for the observation values
+mortality_latest <- mortality_latest %>%
+  group_by(`Geographic area`, Year) %>%
+  summarise(Estimate = median(`Observation Value`, na.rm = TRUE)) %>%
+  ungroup()
+
+# Pick latest year
+neonatal_latest <- neonatal_eac %>%
+  filter(`Geographic area` %in% c("Kenya", "Rwanda", "Uganda", "United Republic of Tanzania", "South Sudan", "Burundi", "Democratic Republic of the Congo", "Somalia")) %>%
+  group_by(`Geographic area`) %>%
+  slice_max(order_by = Year, n = 1) %>%
+  ungroup()
+
+#  Filter to Sex == "Total" and Wealth Quintile == "Total"
+neonatal_latest <- neonatal_latest %>%
+  filter(Sex == "Total", `Wealth Quintile` == "Total")
+
+neonatal_latest <- neonatal_latest %>%
+  group_by(`Geographic area`, Year) %>%
+  summarise(Estimate = median(`Observation Value`, na.rm = TRUE)) %>%
+  ungroup()
+
+#rename Tanzania
+neonatal_latest <- neonatal_latest %>%
+  mutate(`Geographic area` = ifelse(`Geographic area` == "United Republic of Tanzania", "Tanzania", `Geographic area`))
+
+mortality_latest <- mortality_latest %>%
+  mutate(`Geographic area` = ifelse(`Geographic area` == "United Republic of Tanzania", "Tanzania", `Geographic area`))
+
+# Read each shapefile
+kenya <- st_read("shapefiles/gadm41_KEN_0.shp")
+uganda <- st_read("shapefiles/gadm41_UGA_0.shp")
+#tanzania <- st_read("shapefiles/gadm41_TZA_0.shp")
+#rwanda <- st_read("shapefiles/gadm41_RWA_0.shp")
+#burundi <- st_read("shapefiles/gadm41_BDI_0.shp")
+#south_sudan <- st_read("shapefiles/gadm41_SSD_0.shp")
+#drc <- st_read("shapefiles/gadm41_COD_0.shp")
+#somalia <- st_read("shapefiles/gadm41_SOM_0.shp")
+
+# Merge into one object
+eac_countries1 <- bind_rows(
+  kenya, uganda
+)
+#, tanzania, rwanda, burundi, south_sudan, drc, somalia
+#Merge the data
+eac_map_neonatal <- left_join(eac_countries1, neonatal_latest, by = c("COUNTRY" = "Geographic area"))
+eac_map_mortality <- left_join(eac_countries1, mortality_latest, by = c("COUNTRY" = "Geographic area"))
+
+#Visual map for Under 5 mortality rate
+ggplot(data = eac_map_mortality) +
+  geom_sf(aes(fill = Estimate), color = "black") +
+  scale_fill_viridis_c(option = "magma", name = "Under-5 Mortality Rate") +
+  theme_minimal() +
+  labs(
+    title = "Latest Under-5 Mortality Rate in East African Community",
+  )
+```
+
+**Visual Map for latest estimate of Neonatal mortality rates**
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE,fig.width=10, fig.height=6}
+#Visual map for neonatal mortality rate
+ggplot(data = eac_map_neonatal) +
+  geom_sf(aes(fill = Estimate), color = "black") +
+  scale_fill_viridis_c(option = "plasma", name = "Neonatal Mortality Rate") +
+  theme_minimal() +
+  labs(
+    title = "Latest Neonatal Mortality Rate in East African Community",
+  
+  )
+
+```
+
+**Average trends in the mortality rates over time**
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE,fig.width=10, fig.height=6}
+#Average trend lines plot
+#  calculate the average under-5 mortality per year
+mortality_avg <- under_five_eac %>%
+  group_by(Year) %>%
+  summarize(Average_Estimate = mean(`Observation Value`, na.rm = TRUE))
+
+# Plot
+ggplot() +
+  geom_line(data = mortality_avg, aes(x = Year, y = Average_Estimate), color = "black", size = 0.8) +
+  geom_point(data = under_five_eac, aes(x = Year, y = `Observation Value`, color = `Geographic area`), size = 1) +
+  theme_minimal() +
+  labs(
+    title = "Under-5 Mortality Rate Trends (EAC Countries)",
+    x = "Year",
+    y = "Mortality Rate (per 1000 live births)",
+    color = "Country",
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5),  
+    axis.text = element_text(size = 12),   
+    legend.title = element_text(size = 12), 
+    legend.text = element_text(size = 12)  
+  )
+
+```
+
+```{r,echo=TRUE, message=FALSE, warning=FALSE,fig.width=10, fig.height=6}
+# Calculate average neonatal mortality per year
+neonatal_avg <- neonatal_eac %>%
+  group_by(Year) %>%
+  summarize(Average_Estimate = mean(`Observation Value`, na.rm = TRUE))
+
+# Plot
+ggplot() +
+  geom_line(data = neonatal_avg, aes(x = Year, y = Average_Estimate), color = "black", size = 1.5) +
+  geom_point(data = neonatal_eac, aes(x = Year, y = `Observation Value`, color = `Geographic area`), size = 2) +
+  theme_minimal() +
+  labs(
+    title = "Neonatal Mortality Rate Trends (EAC Countries)",
+    x = "Year",
+    y = "Mortality Rate (per 1000 live births)",
+    color = "Country"
+  ) +
+   theme(
+    plot.title = element_text(hjust = 0.5),  
+    axis.text = element_text(size = 12),   
+    legend.title = element_text(size = 12), 
+    legend.text = element_text(size = 12)  
+  )
+```
+
+**Country with highest under 5 Mortality rates**
+
+```{r}
+# For Under-5 mortality
+mortality_latest %>%
+  arrange(desc(Estimate)) %>%
+  select(`Geographic area`, Estimate) %>%
+  head(1)
+```
+
+**Country with highest Neonatal mortality**
+
+```{r}
+# For Neonatal mortality
+neonatal_latest %>%
+  arrange(desc(Estimate)) %>%
+  select(`Geographic area`, Estimate) %>%
+  head(1)
+```
