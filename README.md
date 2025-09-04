@@ -47,11 +47,10 @@ The analysis was implemented in **R** with an **interactive Shiny dashboard** fo
 ---
 
 ## 📸 Dashboard Preview
-![Dashboard Screenshot](dashboard.png)
+![Dashboard Screenshot](dashboard1.screenshot.png)
 
 ---
 
-## 🚀 How to Run
-1. Clone this repo:
-   ```bash
-   git clone https://github.com/TerryPendo/Cema_Data_Science.git
+## 🌐 Live Dashboard
+👉 [Click here to try the interactive Shiny Dashboard](https://0196803d-274e-45e0-ad5e-9aabf3aafcde.share.connect.posit.cloud/)
+
