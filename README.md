@@ -47,7 +47,13 @@ The analysis was implemented in **R** with an **interactive Shiny dashboard** fo
 ---
 
 ## 📸 Dashboard Preview
-![Dashboard Screenshot](dashboard1.screenshot.png)
+
+### 🗺️ Map View
+![Map Screenshot](map.png)
+
+### 📈 Line Chart View
+![Line Chart Screenshot](linechart.png)
+
 
 ---
 
