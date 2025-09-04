@@ -2,7 +2,11 @@
 
 ## 📖 Introduction
 This project was developed as part of the **CEMA Data Science assignment**.  
-The goal was to analyze the relationship between **HIV prevalence** and **multidimensional poverty** across different regions and years.  
+The goal was to: 
+- Create a visualization that shows trends of HIV cases in the countries that contribute to 75% of the global burden and countries contributing to 75% of the burden within each WHO region.
+- Merge HIV data with poverty data and analyze the relationship between **HIV prevalence** and **multidimensional poverty** across different regions and years.
+- Visualize latest estimate of under 5 and neonatal mortality rates at the country level using shapefiles.
+- Show the average trends in the mortality rates overtime.
 
 The analysis was implemented in **R** with an **interactive Shiny dashboard** for visualization.
 
@@ -20,24 +24,16 @@ The analysis was implemented in **R** with an **interactive Shiny dashboard** fo
 ---
 
 ## 🔍 Methods
-1. **Data Wrangling**: Cleaned and merged HIV and poverty datasets.  
+1. **Data Wrangling**: Cleaned,filtered and merged HIV and poverty datasets.  
 2. **Exploratory Data Analysis (EDA)**: Summary statistics, correlations, and trends.  
 3. **Visualization**:  
-   - 📈 Line plots for HIV trends (2000–2023).  
-   - 🗺️ Maps showing spatial distribution of poverty.  
+   - 📈 Line plots for HIV trends (2000–2023) and mortality rate trends in East African Countries.  
+   - 🗺️ Maps showing spatial distribution of under-five and neo-natal mortality rates.  
    - 💻 Interactive Shiny dashboard for dynamic filtering.  
 4. **Statistical Modeling**:  
-   - Examined the association between HIV prevalence and poverty indicators.  
+   - Examined the association between HIV prevalence and poverty indicators using General Linear Mixed models.  
 
 ---
-
-## 🛠️ Tools & Technologies
-- 🟦 R, RStudio  
-- ⚡ Shiny  
-- 📊 ggplot2, dplyr  
-- 🌐 Geospatial analysis with shapefiles
-
-  ---
 
 ## 📊 Results
 - 📉 HIV prevalence showed a general **declining trend** from 2000 to 2023.  
