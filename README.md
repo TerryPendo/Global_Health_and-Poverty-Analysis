@@ -31,6 +31,14 @@ The analysis was implemented in **R** with an **interactive Shiny dashboard** fo
 
 ---
 
+## 🛠️ Tools & Technologies
+- 🟦 R, RStudio  
+- ⚡ Shiny  
+- 📊 ggplot2, dplyr  
+- 🌐 Geospatial analysis with shapefiles
+
+  ---
+
 ## 📊 Results
 - 📉 HIV prevalence showed a general **declining trend** from 2000 to 2023.  
 - 🤝 Higher poverty indices were associated with higher HIV prevalence in some regions.  
