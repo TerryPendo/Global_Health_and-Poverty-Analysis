@@ -1,42 +1,49 @@
-# Cema Data Science Project
+# 🌍 CEMA Data Science Project
 
-This project analyzes **HIV prevalence (2000–2023)** and **multidimensional poverty indicators** in East Africa.  
-It includes data cleaning, visualization, and a Shiny dashboard.
+## 📖 Introduction
+This project was developed as part of the **CEMA Data Science assignment**.  
+The goal was to analyze the relationship between **HIV prevalence** and **multidimensional poverty** across different regions and years.  
 
----
-
-## 📂 Files in this Repository
-- **Datasets**
-  - `HIV data 2000-2023.csv` → HIV prevalence dataset
-  - `multidimensional_poverty.xlsx` → Poverty dataset from World Bank
-  - `dataset_datascience.csv` → Combined dataset
-
-- **R Shiny App**
-  - `app.R`, `server.R`, `ui.R` → Shiny dashboard files
-
-- **Reports**
-  - `Teresia_Mwagona.Rmd` → R Markdown report
-
-- **Other**
-  - `shapefiles/` → Map files for visualization
-  - `manifest.json` → Project configuration
+The analysis was implemented in **R** with an **interactive Shiny dashboard** for visualization.
 
 ---
 
-## 🛠 Tools & Technologies
-- **R** (tidyverse, shiny, ggplot2)
-- **Excel**
-- **GIS shapefiles** for mapping
+## 📂 Project Structure
+- 📁 `shapefiles/` → Geospatial files for mapping  
+- 📄 `app.R`, `server.R`, `ui.R` → Shiny application code  
+- 📊 `dataset_datascience.csv` → Cleaned dataset used in the app  
+- 📊 `HIV data 2000-2023.csv` → Raw HIV prevalence data  
+- 📊 `multidimensional_poverty.xlsx` → Multidimensional poverty index data  
+- 📝 `Teresia_Mwagona.Rmd` → R Markdown report of the analysis  
+- ⚙️ `manifest.json` → Metadata for project setup  
 
 ---
 
-## 📊 Outputs
-- Interactive Shiny dashboard for exploring HIV and poverty trends  
-- Statistical report (RMarkdown)  
-- Visualizations of HIV prevalence vs. poverty indicators  
+## 🔍 Methods
+1. **Data Wrangling**: Cleaned and merged HIV and poverty datasets.  
+2. **Exploratory Data Analysis (EDA)**: Summary statistics, correlations, and trends.  
+3. **Visualization**:  
+   - 📈 Line plots for HIV trends (2000–2023).  
+   - 🗺️ Maps showing spatial distribution of poverty.  
+   - 💻 Interactive Shiny dashboard for dynamic filtering.  
+4. **Statistical Modeling**:  
+   - Examined the association between HIV prevalence and poverty indicators.  
 
 ---
 
-## 🚀 Next Steps
-- Add more indicators (education, income)  
-- Deploy Shiny app online  
+## 📊 Results
+- 📉 HIV prevalence showed a general **declining trend** from 2000 to 2023.  
+- 🤝 Higher poverty indices were associated with higher HIV prevalence in some regions.  
+- 🖥️ The Shiny app allows users to explore these patterns interactively.  
+
+---
+
+## 📸 Dashboard Preview
+![Dashboard Screenshot](dashboard.png)
+
+---
+
+## 🚀 How to Run
+1. Clone this repo:
+   ```bash
+   git clone https://github.com/TerryPendo/Cema_Data_Science.git
