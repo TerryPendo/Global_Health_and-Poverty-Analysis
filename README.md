@@ -1,4 +1,4 @@
-# 🌍 CEMA Data Science Project
+# 🌍 Global Health Analytics Project
 
 ## 📖 Introduction
 This project was developed as part of the **CEMA Data Science assignment**.  
