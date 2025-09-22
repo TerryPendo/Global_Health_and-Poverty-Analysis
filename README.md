@@ -1,4 +1,4 @@
-# 🌍 Global Health Analytics Project
+#  Global Health, Poverty and Mortality Analysis 
 
 ## Objective
 To analyse global HIV prevalence and its relationship with multidimensional poverty, and to visualise child mortality trends across East African Community (EAC) countries.  
