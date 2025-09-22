@@ -4,15 +4,11 @@
 To analyse global HIV prevalence and its relationship with multidimensional poverty, and to visualise child mortality trends across East African Community (EAC) countries.  
 This project combines data cleaning, descriptive analytics, statistical modelling and geospatial mapping.
 
----
-
 ## Dataset Sources
 - **HIV data 2000–2023** – WHO / UNAIDS data on people living with HIV  
 - **Multidimensional poverty data** – World Bank / UN data on poverty headcount and deprivation factors  
 - **Child mortality data** – UN Inter-agency Group for Child Mortality Estimation (U5 and neonatal rates)  
 - **Shapefiles** – GADM (administrative boundaries for EAC countries)
-
----
 
 ## Workflow
 1. **Data Cleaning**  
@@ -37,7 +33,6 @@ This project combines data cleaning, descriptive analytics, statistical modellin
 6. **Interactive Dashboard**  
    - Built a Shiny dashboard for dynamic exploration of the cleaned datasets  
    - Integrated plots and maps into one interface for end-users
----
 
 ## Tools Used
 - R (tidyverse, dplyr, ggplot2, lme4, sf, plotly, viridis, scales)  
@@ -52,7 +47,6 @@ This project combines data cleaning, descriptive analytics, statistical modellin
 - **Protective factors:** Higher school enrolment and broader electricity access are both significantly linked to reductions in multidimensional poverty; sanitation, drinking water and educational attainment (years of schooling) were not statistically significant in this model.  
 - **Child mortality in the EAC:** Under-five and neonatal mortality rates have been declining on average since 2000, but Somalia (and to a lesser extent South Sudan) continues to record the highest rates among the EAC group.
  
----
 ## Project Structure
 ├── shapefiles/
 ├── HIV data 2000-2023.csv
@@ -66,7 +60,6 @@ This project combines data cleaning, descriptive analytics, statistical modellin
 ├── map.png # Screenshot of map
 ├── manifest.json
 └── README.md
-
 
 ## How to Run
 1. Clone the repository.  
@@ -83,8 +76,6 @@ This project combines data cleaning, descriptive analytics, statistical modellin
 
 ### Line Chart View
 ![Line Chart Screenshot](linechart.png)
-
----
 
 ## Live Dashboard
  [Click here to try the interactive Shiny Dashboard](https://0196803d-274e-45e0-ad5e-9aabf3aafcde.share.connect.posit.cloud/)
